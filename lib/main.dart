@@ -1,7 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:myapp/presentation/navigation/app_router.dart'; // Pastikan path ini benar
+import 'package:myapp/presentation/navigation/app_router.dart';
+import 'package:myapp/di_container.dart'
+    as di; // Import file DI kita dengan alias 'di'
 
-void main() {
+Future<void> main() async {
+  // Pastikan Flutter binding sudah diinisialisasi jika ada operasi async sebelum runApp
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Panggil fungsi inisialisasi Dependency Injection
+  await di.initDI();
+
   runApp(const MyApp());
 }
 
@@ -11,8 +19,12 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Definisikan warna tema utama aplikasi Anda di sini jika ingin konsisten
-    final Color primaryColor = const Color(0xFF4CAF50); // Hijau dari LoginScreen
-    final Color accentColor = const Color(0xFFFF9800);  // Oranye dari LoginScreen
+    final Color primaryColor = const Color(
+      0xFF4CAF50,
+    ); // Hijau dari LoginScreen
+    final Color accentColor = const Color(
+      0xFFFF9800,
+    ); // Oranye dari LoginScreen
 
     return MaterialApp(
       title: 'Snap Cook',
@@ -22,8 +34,10 @@ class MyApp extends StatelessWidget {
           primary: primaryColor,
           secondary: accentColor, // Dulu disebut accentColor
         ),
-        scaffoldBackgroundColor: Colors.grey[100], // Latar belakang umum scaffold
-        fontFamily: 'Poppins', // Contoh penggunaan font kustom (opsional, perlu di-setup)
+        scaffoldBackgroundColor:
+            Colors.grey[100], // Latar belakang umum scaffold
+        fontFamily:
+            'Poppins', // Contoh penggunaan font kustom (opsional, perlu di-setup)
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
             backgroundColor: primaryColor,
@@ -46,12 +60,15 @@ class MyApp extends StatelessWidget {
             borderSide: BorderSide.none,
           ),
           prefixIconColor: primaryColor.withOpacity(0.7),
-          contentPadding: const EdgeInsets.symmetric(vertical: 18.0, horizontal: 16.0),
+          contentPadding: const EdgeInsets.symmetric(
+            vertical: 18.0,
+            horizontal: 16.0,
+          ),
         ),
         textButtonTheme: TextButtonThemeData(
           style: TextButton.styleFrom(
             foregroundColor: primaryColor, // Warna teks untuk TextButton
-          )
+          ),
         ),
         appBarTheme: AppBarTheme(
           backgroundColor: primaryColor,
@@ -65,7 +82,8 @@ class MyApp extends StatelessWidget {
         // Anda bisa menambahkan konfigurasi tema lainnya di sini
       ),
       debugShowCheckedModeBanner: false, // Menghilangkan banner debug
-      onGenerateRoute: AppRouter.generateRoute, // Menggunakan router kustom Anda
+      onGenerateRoute:
+          AppRouter.generateRoute, // Menggunakan router kustom Anda
       initialRoute: '/login', // Mengatur halaman login sebagai halaman awal
     );
   }

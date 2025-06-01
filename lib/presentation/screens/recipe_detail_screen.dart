@@ -1,25 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:myapp/domain/entities/recipe.dart';
 
 // Asumsi Anda memiliki model Recipe yang serupa atau bisa diimpor
 // Jika belum, Anda bisa mendefinisikannya di sini atau di domain/entities
-class Recipe {
-  final String id;
-  final String name;
-  final String imageUrl;
-  final double rating;
-  final List<String> ingredients;
-  final List<String> steps;
-  // Tambahkan field lain jika perlu, misal: deskripsi, waktu masak, porsi, dll.
+// class Recipe {
+//   final String id;
+//   final String name;
+//   final String imageUrl;
+//   final double rating;
+//   final List<String> ingredients;
+//   final List<String> steps;
+//   // Tambahkan field lain jika perlu, misal: deskripsi, waktu masak, porsi, dll.
 
-  Recipe({
-    required this.id,
-    required this.name,
-    required this.imageUrl,
-    required this.rating,
-    required this.ingredients,
-    required this.steps,
-  });
-}
+//   Recipe({
+//     required this.id,
+//     required this.name,
+//     required this.imageUrl,
+//     required this.rating,
+//     required this.ingredients,
+//     required this.steps,
+//   });
+// }
 
 class RecipeDetailScreen extends StatelessWidget {
   final Recipe recipe;
