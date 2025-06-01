@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 // import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart'; // Opsi untuk grid yang lebih dinamis
 // Impor DetectionScreen di bagian atas home_screen.dart
 import 'package:myapp/presentation/screens/detection_screen.dart';
+import 'package:myapp/presentation/screens/collection_screen.dart';
+import 'package:myapp/presentation/screens/profile_screen.dart';
 
 // Model sederhana untuk data resep dummy
 class Recipe {
@@ -94,20 +96,10 @@ class _HomeScreenState extends State<HomeScreen> {
       return const DetectionScreen(); // <-- TAMPILKAN DETECTION SCREEN DI SINI
     } else if (_selectedIndex == 2) {
       // Koleksi
-      return Center(
-        child: Text(
-          'Halaman Koleksi Resep (Segera Hadir)',
-          style: TextStyle(fontSize: 18, color: textColor),
-        ),
-      );
+      return const CollectionScreen();
     } else if (_selectedIndex == 3) {
       // Profil
-      return Center(
-        child: Text(
-          'Halaman Profil Pengguna (Segera Hadir)',
-          style: TextStyle(fontSize: 18, color: textColor),
-        ),
-      );
+      return const ProfileScreen();
     }
     return Container();
   }
