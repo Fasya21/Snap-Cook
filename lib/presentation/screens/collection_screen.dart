@@ -413,75 +413,84 @@ class _CollectionScreenState extends State<CollectionScreen> {
   }
 
   Widget _buildCollectedRecipeCard(Recipe recipe) {
-    return Card(
-      color: textFieldFillColor, // Warna latar kartu seperti di desain
-      margin: const EdgeInsets.only(bottom: 16.0),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12.0),
-        // side: BorderSide(color: borderColor.withOpacity(0.5)) // Opsional: border tipis
-      ),
-      elevation: 1.0,
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Row(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8.0),
-              child: Image.network(
-                recipe.imageUrl,
-                width: 80,
-                height: 80,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    width: 80,
-                    height: 80,
-                    color: Colors.grey[300],
-                    child: Icon(
-                      Icons.restaurant_menu,
-                      color: Colors.grey[500],
-                      size: 30,
-                    ),
-                  );
-                },
+    return InkWell(
+      // Dibungkus dengan InkWell agar bisa diklik
+      onTap: () {
+        // Aksi ketika kartu diklik, misalnya navigasi ke detail resep
+        Navigator.pushNamed(context, '/recipe-detail', arguments: recipe);
+        print("Kartu koleksi diklik: ${recipe.name}"); // Untuk debugging
+      },
+      splashColor: accentColor.withOpacity(0.1), // Warna efek saat disentuh
+      highlightColor: accentColor.withOpacity(0.05),
+      child: Card(
+        color: textFieldFillColor, // Warna latar kartu seperti di desain Anda
+        margin: const EdgeInsets.only(bottom: 16.0),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12.0),
+        ),
+        elevation: 1.0,
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8.0),
+                child: Image.network(
+                  recipe.imageUrl,
+                  width: 80,
+                  height: 80,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      width: 80,
+                      height: 80,
+                      color: Colors.grey[300],
+                      child: Icon(
+                        Icons.restaurant_menu,
+                        color: Colors.grey[500],
+                        size: 30,
+                      ),
+                    );
+                  },
+                ),
               ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    recipe.name,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: textColor,
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      recipe.name,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: textColor,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    '${recipe.category} • ${recipe.cookTime} • ${recipe.difficulty}',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: textColor.withOpacity(0.7),
+                    const SizedBox(height: 6),
+                    Text(
+                      '${recipe.category} • ${recipe.cookTime} • ${recipe.difficulty}',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: textColor.withOpacity(0.7),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            // Opsional: Tombol aksi seperti delete atau edit
-            // IconButton(
-            //   icon: Icon(Icons.more_vert, color: textColor.withOpacity(0.6)),
-            //   onPressed: () {
-            //     // Aksi untuk kartu resep
-            //   },
-            // )
-          ],
+              // Opsional: Tombol aksi seperti delete atau edit
+              // IconButton(
+              //   icon: Icon(Icons.more_vert, color: textColor.withOpacity(0.6)),
+              //   onPressed: () {
+              //     // Aksi untuk kartu resep
+              //   },
+              // )
+            ],
+          ),
         ),
       ),
     );
