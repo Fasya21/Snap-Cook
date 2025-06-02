@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart'; // Akan dibutuhkan nanti
-// import 'dart:io'; // Akan dibutuhkan nanti
+import 'package:image_picker/image_picker.dart'; // Pastikan ini diimpor
+import 'dart:io'; // Diperlukan untuk tipe data File
 
 class DetectionScreen extends StatefulWidget {
   const DetectionScreen({super.key});
@@ -11,8 +11,13 @@ class DetectionScreen extends StatefulWidget {
 
 class _DetectionScreenState extends State<DetectionScreen> {
   final TextEditingController _ingredientController = TextEditingController();
-  String _detectionResult = "Belum ada Resep yang terdeteksi.";
-  // File? _selectedImage; // Untuk menyimpan gambar yang dipilih
+  String _detectionInfo =
+      "Pilih gambar atau masukkan bahan untuk dideteksi."; // Info awal
+  File? _selectedImage; // Untuk menyimpan file gambar yang dipilih
+  List<String> _detectedIngredientsFromImage =
+      []; // Untuk menyimpan hasil deteksi dari gambar
+
+  final ImagePicker _picker = ImagePicker(); // Instance dari ImagePicker
 
   // Warna dari palet yang telah kita sepakati
   final Color backgroundColor = const Color(0xFFF5F7FA);
@@ -24,45 +29,85 @@ class _DetectionScreenState extends State<DetectionScreen> {
   final Color iconColor = const Color(0xFFFF7043).withOpacity(0.8);
   final Color borderColor = Colors.grey.shade300;
 
-  // Fungsi placeholder untuk pengambilan gambar
   Future<void> _pickImage(ImageSource source) async {
-    // final ImagePicker picker = ImagePicker();
-    // final XFile? image = await picker.pickImage(source: source, imageQuality: 80);
-    // if (image != null) {
-    //   setState(() {
-    //     _selectedImage = File(image.path);
-    //     _detectionResult = "Gambar dipilih. Tekan 'DETEKSI RESEP'."; // Update status
-    //   });
-    //   // TODO: Kirim gambar ke API atau proses lebih lanjut
-    // }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Fitur pilih gambar dari ${source.name} belum implementasi penuh.',
-        ),
-      ),
-    );
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: source,
+        imageQuality: 80, // Kualitas gambar (0-100)
+        maxWidth: 1000, // Batasi lebar gambar untuk efisiensi
+      );
+
+      if (image != null) {
+        setState(() {
+          _selectedImage = File(image.path);
+          _detectionInfo =
+              "Gambar dipilih. Tekan 'DETEKSI RESEP' untuk memproses.";
+          _detectedIngredientsFromImage
+              .clear(); // Bersihkan hasil deteksi sebelumnya jika ada
+          _ingredientController
+              .clear(); // Bersihkan input manual jika gambar dipilih
+        });
+        print("Gambar dipilih: ${image.path}");
+      } else {
+        print("Tidak ada gambar dipilih.");
+        // setState(() {
+        //   _detectionInfo = "Tidak ada gambar dipilih. Silakan coba lagi.";
+        // });
+      }
+    } catch (e) {
+      print("Error saat mengambil gambar: $e");
+      setState(() {
+        _detectionInfo = "Error saat mengambil gambar: ${e.toString()}";
+      });
+    }
   }
 
   void _detectRecipes() {
-    // TODO: Implementasi logika deteksi resep berdasarkan _selectedImage atau _ingredientController.text
-    // Untuk sekarang, hanya simulasi
-    if (_ingredientController.text.isNotEmpty) {
+    if (_selectedImage == null && _ingredientController.text.trim().isEmpty) {
       setState(() {
-        _detectionResult =
-            "Mencari resep untuk: ${_ingredientController.text}... (Simulasi)";
+        _detectionInfo =
+            "Silakan pilih gambar atau masukkan daftar bahan terlebih dahulu.";
       });
-    } else /* if (_selectedImage != null) */ {
-      // Hapus komentar jika _selectedImage sudah dipakai
-      setState(() {
-        _detectionResult = "Memproses gambar untuk deteksi bahan... (Simulasi)";
-      });
+      return;
     }
-    // else {
-    //   setState(() {
-    //     _detectionResult = "Silakan pilih gambar atau masukkan bahan terlebih dahulu.";
-    //   });
-    // }
+
+    setState(() {
+      // Jika ada gambar, kita akan prioritaskan deteksi dari gambar (nantinya)
+      // Jika tidak ada gambar tapi ada teks, kita akan pakai teks (nantinya)
+      if (_selectedImage != null) {
+        _detectionInfo =
+            "Memproses gambar untuk deteksi bahan... (Simulasi API)";
+        // TODO: Panggil fungsi untuk mengirim _selectedImage ke Gemini API
+        // Contoh: _processImageWithGemini(_selectedImage!);
+        // Untuk sekarang, kita simulasi hasil deteksi:
+        Future.delayed(const Duration(seconds: 2), () {
+          setState(() {
+            _detectedIngredientsFromImage = [
+              "Tomat",
+              "Ayam",
+              "Bawang",
+            ]; // Hasil dummy
+            _detectionInfo =
+                "Bahan terdeteksi dari gambar: ${_detectedIngredientsFromImage.join(', ')}. Mencari resep...";
+            // TODO: Lanjutkan ke pencocokan resep
+          });
+        });
+      } else if (_ingredientController.text.trim().isNotEmpty) {
+        List<String> manualIngredients =
+            _ingredientController.text
+                .trim()
+                .split(',')
+                .map((e) => e.trim())
+                .where((e) => e.isNotEmpty)
+                .toList();
+        _detectionInfo =
+            "Bahan dari input manual: ${manualIngredients.join(', ')}. Mencari resep...";
+        // TODO: Lanjutkan ke pencocokan resep dengan manualIngredients
+      }
+    });
+
+    // TODO: Implementasi logika deteksi resep (pencocokan dengan data Firestore)
+    // berdasarkan _detectedIngredientsFromImage atau _ingredientController.text
   }
 
   @override
@@ -76,7 +121,7 @@ class _DetectionScreenState extends State<DetectionScreen> {
         ),
         backgroundColor: backgroundColor,
         elevation: 0,
-        iconTheme: IconThemeData(color: textColor), // Warna ikon back jika ada
+        iconTheme: IconThemeData(color: textColor),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
@@ -85,7 +130,7 @@ class _DetectionScreenState extends State<DetectionScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Ambil foto bahan makanan dengan overlay guide, atau ketik bahan secara manual.',
+              'Ambil foto bahan makanan, atau ketik bahan secara manual untuk menemukan resep.',
               style: TextStyle(fontSize: 15, color: textColor.withOpacity(0.7)),
             ),
             const SizedBox(height: 24),
@@ -93,12 +138,11 @@ class _DetectionScreenState extends State<DetectionScreen> {
             // Area Input Gambar
             Container(
               padding: const EdgeInsets.symmetric(
-                vertical: 24.0,
+                vertical: 16.0,
                 horizontal: 16.0,
               ),
               decoration: BoxDecoration(
-                color:
-                    cardColor, // Bisa juga textFieldFillColor agar lebih lembut
+                color: cardColor,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: borderColor, width: 1.5),
                 boxShadow: [
@@ -111,19 +155,36 @@ class _DetectionScreenState extends State<DetectionScreen> {
               ),
               child: Column(
                 children: [
-                  // if (_selectedImage != null)
-                  //   Padding(
-                  //     padding: const EdgeInsets.only(bottom: 16.0),
-                  //     child: ClipRRect(
-                  //       borderRadius: BorderRadius.circular(12),
-                  //       child: Image.file(
-                  //         _selectedImage!,
-                  //         height: 150,
-                  //         width: double.infinity,
-                  //         fit: BoxFit.cover,
-                  //       ),
-                  //     ),
-                  //   ),
+                  if (_selectedImage != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 16.0),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.file(
+                          _selectedImage!,
+                          height: 200, // Tinggi pratinjau gambar
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    )
+                  else
+                    Container(
+                      // Placeholder jika belum ada gambar dipilih
+                      height: 200,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Center(
+                        child: Text(
+                          'Pratinjau gambar akan muncul di sini',
+                          style: TextStyle(color: Colors.grey[500]),
+                        ),
+                      ),
+                    ),
+                  const SizedBox(height: 16),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
@@ -146,7 +207,7 @@ class _DetectionScreenState extends State<DetectionScreen> {
 
             // Area Input Teks Manual
             Text(
-              'Tulis daftar bahan :',
+              'Atau tulis daftar bahan :',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -157,10 +218,10 @@ class _DetectionScreenState extends State<DetectionScreen> {
             TextField(
               controller: _ingredientController,
               decoration: InputDecoration(
-                hintText: 'Contoh : Telur, Tomat, Bayam',
+                hintText: 'Contoh : Telur, Tomat, Bayam (pisahkan dengan koma)',
                 hintStyle: TextStyle(color: hintTextColor),
                 filled: true,
-                fillColor: cardColor, // Atau textFieldFillColor
+                fillColor: cardColor,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide(color: borderColor, width: 1.5),
@@ -181,6 +242,15 @@ class _DetectionScreenState extends State<DetectionScreen> {
               minLines: 2,
               maxLines: 4,
               style: TextStyle(color: textColor, fontSize: 15),
+              onTap: () {
+                // Jika pengguna mengetik, hapus gambar yang dipilih
+                if (_selectedImage != null) {
+                  setState(() {
+                    _selectedImage = null;
+                    _detectionInfo = "Input manual dipilih. Masukkan bahan.";
+                  });
+                }
+              },
             ),
             const SizedBox(height: 24),
 
@@ -209,9 +279,9 @@ class _DetectionScreenState extends State<DetectionScreen> {
             ),
             const SizedBox(height: 24),
 
-            // Area Hasil Deteksi
+            // Area Hasil Deteksi / Informasi
             Text(
-              'Hasil Deteksi',
+              'Informasi & Hasil',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -223,12 +293,12 @@ class _DetectionScreenState extends State<DetectionScreen> {
               width: double.infinity,
               padding: const EdgeInsets.all(16.0),
               decoration: BoxDecoration(
-                color: textFieldFillColor, // Warna yang lembut untuk hasil
+                color: textFieldFillColor,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: borderColor.withOpacity(0.7)),
               ),
               child: Text(
-                _detectionResult,
+                _detectionInfo, // Menampilkan _detectionInfo
                 style: TextStyle(
                   fontSize: 15,
                   color: textColor.withOpacity(0.9),
@@ -239,8 +309,6 @@ class _DetectionScreenState extends State<DetectionScreen> {
           ],
         ),
       ),
-      // BottomNavigationBar bisa ditambahkan di sini jika halaman ini berdiri sendiri
-      // atau dikelola oleh widget parent (seperti HomeScreen atau MainScreen)
     );
   }
 
@@ -249,28 +317,43 @@ class _DetectionScreenState extends State<DetectionScreen> {
     required String label,
     required VoidCallback onTap,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: textFieldFillColor.withOpacity(0.5),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: borderColor.withOpacity(0.5)),
-            ),
-            child: Icon(icon, size: 36, color: iconColor),
-          ),
-          const SizedBox(height: 8),
-          Text(
+    return Expanded(
+      // Menggunakan Expanded agar tombol mengisi ruang
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+        child: ElevatedButton.icon(
+          // Mengubah menjadi ElevatedButton agar lebih jelas
+          icon: Icon(icon, color: Colors.white),
+          label: Text(
             label,
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 13, color: textColor.withOpacity(0.8)),
+            style: const TextStyle(fontSize: 13, color: Colors.white),
           ),
-        ],
+          onPressed: onTap,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: iconColor,
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        ),
       ),
     );
   }
 }
+
+//**Perubahan Utama di `DetectionScreen`:**
+// * **Impor `image_picker.dart` dan `dart:io`**.
+// * **`_selectedImage`**: Variabel `File?` untuk menyimpan path gambar yang dipilih.
+// * **`_picker`**: Instance dari `ImagePicker`.
+// * **`_pickImage(ImageSource source)` Diperbarui**:
+//     * Menggunakan `await _picker.pickImage(...)` untuk membuka kamera atau galeri.
+//     * `imageQuality` dan `maxWidth` bisa ditambahkan untuk optimasi.
+//     * Jika gambar berhasil dipilih (`image != null`), path gambar disimpan ke `_selectedImage` menggunakan `File(image.path)`, dan `setState` dipanggil untuk memperbarui UI (menampilkan pratinjau).
+//     * `_ingredientController` dan `_detectedIngredientsFromImage` dibersihkan saat gambar baru dipilih.
+// * **Pratinjau Gambar**: Di dalam `build()`, ada kondisi untuk menampilkan `Image.file(_selectedImage!)` jika `_selectedImage` tidak null, atau placeholder jika null.
+// * **Input Teks Membersihkan Gambar**: Saat `TextField` untuk input manual di-tap, `_selectedImage` akan di-clear. Ini agar pengguna fokus pada satu metode input.
+// * **`_detectRecipes()` Diperbarui (Sedikit)**: Sekarang mengecek apakah gambar dipilih atau teks diisi sebelum melanjutkan. Logika API dan pencocokan resep masih `// TODO`. Saya menambahkan simulasi hasil deteksi dari gambar untuk sementara.
+// * **`_buildImageInputAction` Diperbarui**: Menggunakan `ElevatedButton.icon` agar terlihat lebih seperti tombol dan `Expanded` agar kedua tombol mengisi ruang secara merata.
+// * **`_detectionInfo`**: Variabel string untuk memberikan feedback kepada pengguna di UI.
