@@ -15,6 +15,7 @@ dependencies:
   flutter_bloc: ^8.1.6 
   equatable: ^2.0.5
   firebase_core: ^3.1.1 # Cek versi terbaru di pub.dev
+  cloud_firestore: ^5.0.2
 
   # Pastikan baris ini ada dan tidak ada tanda '#' di depannya
   image_picker: ^1.1.2 # Anda bisa mengecek versi terbaru di pub.dev
