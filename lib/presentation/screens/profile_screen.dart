@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:myapp/presentation/bloc/auth/auth_cubit.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -52,6 +54,53 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SnackBar(
                   content: Text('Fitur "Edit Profil" belum diimplementasikan.'),
                 ),
+              );
+            },
+          ),
+          _buildProfileMenuItem(
+            icon: Icons.logout_rounded,
+            title: 'Logout',
+            isLogout: true,
+            onTap: () {
+              showDialog(
+                context: context,
+                builder: (BuildContext dialogContext) {
+                  // Gunakan dialogContext yang berbeda
+                  return AlertDialog(
+                    title: const Text('Logout'),
+                    content: const Text('Apakah Anda yakin ingin keluar?'),
+                    actions: <Widget>[
+                      TextButton(
+                        child: Text(
+                          'Batal',
+                          style: TextStyle(color: textColor.withOpacity(0.7)),
+                        ),
+                        onPressed: () {
+                          Navigator.of(
+                            dialogContext,
+                          ).pop(); // Gunakan dialogContext
+                        },
+                      ),
+                      TextButton(
+                        child: Text(
+                          'Logout',
+                          style: TextStyle(
+                            color: Colors.red.shade700,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        onPressed: () {
+                          Navigator.of(
+                            dialogContext,
+                          ).pop(); // Tutup dialog dulu
+                          // Panggil signOut dari AuthCubit
+                          context.read<AuthCubit>().signOut();
+                          // Navigasi ke login akan dihandle oleh AuthStateHandler di main.dart
+                        },
+                      ),
+                    ],
+                  );
+                },
               );
             },
           ),
@@ -121,51 +170,51 @@ class _ProfileScreenState extends State<ProfileScreen> {
             },
           ),
           const Divider(height: 32, thickness: 1, indent: 16, endIndent: 16),
-          _buildProfileMenuItem(
-            icon: Icons.logout_rounded,
-            title: 'Logout',
-            isLogout: true,
-            onTap: () {
-              // Implementasi logika logout
-              showDialog(
-                context: context,
-                builder: (BuildContext context) {
-                  return AlertDialog(
-                    title: const Text('Logout'),
-                    content: const Text('Apakah Anda yakin ingin keluar?'),
-                    actions: <Widget>[
-                      TextButton(
-                        child: Text(
-                          'Batal',
-                          style: TextStyle(color: textColor.withOpacity(0.7)),
-                        ),
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                        },
-                      ),
-                      TextButton(
-                        child: Text(
-                          'Logout',
-                          style: TextStyle(
-                            color: Colors.red.shade700,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        onPressed: () {
-                          Navigator.of(context).pop(); // Tutup dialog
-                          Navigator.pushNamedAndRemoveUntil(
-                            context,
-                            '/login',
-                            (Route<dynamic> route) => false,
-                          );
-                        },
-                      ),
-                    ],
-                  );
-                },
-              );
-            },
-          ),
+          // _buildProfileMenuItem(
+          //   icon: Icons.logout_rounded,
+          //   title: 'Logout',
+          //   isLogout: true,
+          //   onTap: () {
+          //     // Implementasi logika logout
+          //     showDialog(
+          //       context: context,
+          //       builder: (BuildContext context) {
+          //         return AlertDialog(
+          //           title: const Text('Logout'),
+          //           content: const Text('Apakah Anda yakin ingin keluar?'),
+          //           actions: <Widget>[
+          //             TextButton(
+          //               child: Text(
+          //                 'Batal',
+          //                 style: TextStyle(color: textColor.withOpacity(0.7)),
+          //               ),
+          //               onPressed: () {
+          //                 Navigator.of(context).pop();
+          //               },
+          //             ),
+          //             TextButton(
+          //               child: Text(
+          //                 'Logout',
+          //                 style: TextStyle(
+          //                   color: Colors.red.shade700,
+          //                   fontWeight: FontWeight.bold,
+          //                 ),
+          //               ),
+          //               onPressed: () {
+          //                 Navigator.of(context).pop(); // Tutup dialog
+          //                 Navigator.pushNamedAndRemoveUntil(
+          //                   context,
+          //                   '/login',
+          //                   (Route<dynamic> route) => false,
+          //                 );
+          //               },
+          //             ),
+          //           ],
+          //         );
+          //       },
+          //     );
+          //   },
+          // ),
         ],
       ),
     );

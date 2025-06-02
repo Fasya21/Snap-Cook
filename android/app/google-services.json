@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "240119403950",
+    "project_id": "snap-cook-458e1",
+    "storage_bucket": "snap-cook-458e1.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:240119403950:android:c857a3ba79d81a6f51e43f",
+        "android_client_info": {
+          "package_name": "com.example.myapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDqaWCDGDJaWd7tMRFwUjgTUAiw8cAiEDw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
