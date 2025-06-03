@@ -21,7 +21,7 @@ class IngredientDetectionRemoteDatasourceImpl
   IngredientDetectionRemoteDatasourceImpl()
     // Mengambil API key dari environment variable yang dimuat oleh flutter_dotenv
     : _model = GenerativeModel(
-        model: 'gemini-pro-vision', // Model yang mendukung input gambar
+        model: 'gemini-1.5-flash-latest', // Model yang mendukung input gambar
         apiKey: dotenv.env['GEMINI_API_KEY'] ?? "API_KEY_NOT_FOUND",
         // Safety settings bisa disesuaikan jika perlu
         // safetySettings: [

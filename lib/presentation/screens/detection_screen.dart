@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart'; // Impor Bloc
-import 'package:image_picker/image_picker.dart'; // Untuk ImageSource
-import 'dart:io'; // Untuk File
-import 'package:myapp/domain/entities/recipe.dart'; // Impor model Recipe
-import 'package:myapp/presentation/bloc/recipe_detection/recipe_detection_cubit.dart'; // Impor Cubit
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+import 'package:myapp/domain/entities/recipe.dart'; // Pastikan path ini benar & myapp adalah nama paket Anda
+import 'package:myapp/presentation/bloc/recipe_detection/recipe_detection_cubit.dart'; // Pastikan path ini benar
 
 class DetectionScreen extends StatefulWidget {
   const DetectionScreen({super.key});
@@ -22,16 +22,8 @@ class _DetectionScreenState extends State<DetectionScreen> {
   final Color textFieldFillColor = const Color(0xFFFFF0E5);
   final Color textColor = const Color(0xFF212121);
   final Color hintTextColor = Colors.grey.shade500;
-  final Color iconColor = const Color(0xFFFF7043).withOpacity(0.8);
+  final Color iconColor = const Color(0xFFFF7043); // Dibuat solid
   final Color borderColor = Colors.grey.shade300;
-
-  @override
-  void initState() {
-    super.initState();
-    // Panggil reset saat halaman pertama kali dibuat untuk memastikan state awal bersih
-    // Ini opsional, tergantung apakah Anda ingin state persisten antar navigasi tab
-    // context.read<RecipeDetectionCubit>().resetDetection(); 
-  }
 
   @override
   void dispose() {
@@ -40,25 +32,41 @@ class _DetectionScreenState extends State<DetectionScreen> {
   }
 
   void _onPickImage(ImageSource source) {
+    // Panggil method pickImage dari Cubit
     context.read<RecipeDetectionCubit>().pickImage(source);
   }
 
-  void _onDetectRecipesPressed(RecipeDetectionState currentState) {
+  void _onDetectRecipesPressed() {
+    // Dapatkan state saat ini untuk mengetahui apakah ada gambar yang sudah dipilih
+    final currentState = context.read<RecipeDetectionCubit>().state;
     File? imageToProcess;
     List<String>? manualIngredients;
 
     if (currentState is RecipeDetectionImagePicked) {
       imageToProcess = currentState.imageFile;
+    } else if (currentState is RecipeDetectionIngredientsDetected) { // Jika bahan sudah ada dari deteksi sebelumnya
+      imageToProcess = currentState.imageFile; // Gunakan gambar yang sama jika ada
+    } else if (currentState is RecipeDetectionSuccess) {
+      imageToProcess = currentState.imageFile;
+    } else if (currentState is RecipeDetectionNoMatch) {
+      imageToProcess = currentState.imageFile;
+    } else if (currentState is RecipeDetectionError) {
+      imageToProcess = currentState.imageFile;
     }
-    
+
+
     if (_ingredientController.text.trim().isNotEmpty) {
-      manualIngredients = _ingredientController.text.trim().split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
-      // Jika ada input manual, kita mungkin ingin mengabaikan gambar yang sudah dipilih,
-      // atau Anda bisa memiliki logika untuk menggabungkannya.
-      // Untuk sekarang, jika ada teks, kita prioritaskan teks atau biarkan Cubit yang memutuskan.
-      // Jika ada teks, kita set imageToProcess jadi null agar Cubit memproses manualIngredients
-      if (manualIngredients.isNotEmpty) {
-        imageToProcess = null; 
+      manualIngredients = _ingredientController.text.trim().split(',').map((e) => e.trim().toLowerCase()).where((e) => e.isNotEmpty).toList();
+      manualIngredients = manualIngredients.toSet().toList(); // Hapus duplikat
+      // Jika ada input manual, kita prioritaskan ini dan hapus gambar yang mungkin sudah dipilih
+      // agar tidak ada kebingungan input mana yang dipakai.
+      if (manualIngredients.isNotEmpty && imageToProcess != null) {
+         context.read<RecipeDetectionCubit>().resetDetection(); // Reset state gambar jika ada input manual
+         imageToProcess = null; // Abaikan gambar jika ada input manual
+         // Beri feedback ke user jika perlu
+         ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Menggunakan input bahan manual, gambar diabaikan.'), duration: Duration(seconds: 2)),
+          );
       }
     }
 
@@ -68,6 +76,8 @@ class _DetectionScreenState extends State<DetectionScreen> {
       );
       return;
     }
+    
+    // Panggil method processInput dari Cubit
     context.read<RecipeDetectionCubit>().processInput(imageFile: imageToProcess, manualIngredients: manualIngredients);
   }
 
@@ -84,7 +94,7 @@ class _DetectionScreenState extends State<DetectionScreen> {
         elevation: 0,
         iconTheme: IconThemeData(color: textColor),
         centerTitle: true,
-        actions: [ // Tombol reset
+        actions: [
           IconButton(
             icon: Icon(Icons.refresh_rounded, color: iconColor),
             onPressed: () {
@@ -97,28 +107,25 @@ class _DetectionScreenState extends State<DetectionScreen> {
       ),
       body: BlocConsumer<RecipeDetectionCubit, RecipeDetectionState>(
         listener: (context, state) {
-          // Listener untuk side effects seperti SnackBar jika ada error spesifik dari Cubit
-          if (state is RecipeDetectionError && state.message.isNotEmpty) {
-            // SnackBar error sudah ada di AuthStateHandler, tapi ini untuk error spesifik deteksi
-            // Jika tidak ingin duplikat, bisa dihapus atau disesuaikan
-            // ScaffoldMessenger.of(context).showSnackBar(
-            //   SnackBar(content: Text(state.message), backgroundColor: Colors.redAccent),
-            // );
+          // Kita bisa menangani SnackBar untuk error di sini jika mau,
+          // tapi AuthStateHandler di main.dart sudah menangani AuthError global.
+          // Jika ada pesan error spesifik dari RecipeDetectionError yang ingin ditampilkan:
+          if (state is RecipeDetectionError) {
+             ScaffoldMessenger.of(context).removeCurrentSnackBar(); // Hapus snackbar sebelumnya jika ada
+             ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(state.message), backgroundColor: Colors.redAccent, duration: const Duration(seconds: 4)),
+             );
           }
         },
         builder: (context, state) {
           File? currentImageFile;
-          if (state is RecipeDetectionImagePicked) {
-            currentImageFile = state.imageFile;
-          } else if (state is RecipeDetectionIngredientsDetected) {
-            currentImageFile = state.imageFile;
-          } else if (state is RecipeDetectionSuccess) {
-            currentImageFile = state.imageFile;
-          } else if (state is RecipeDetectionNoMatch) {
-            currentImageFile = state.imageFile;
-          } else if (state is RecipeDetectionError) {
-            currentImageFile = state.imageFile;
-          }
+          // Ambil imageFile dari state jika ada untuk ditampilkan di pratinjau
+          if (state is RecipeDetectionImagePicked) currentImageFile = state.imageFile;
+          if (state is RecipeDetectionIngredientsDetected) currentImageFile = state.imageFile;
+          if (state is RecipeDetectionSuccess) currentImageFile = state.imageFile;
+          if (state is RecipeDetectionNoMatch) currentImageFile = state.imageFile;
+          if (state is RecipeDetectionError) currentImageFile = state.imageFile;
+
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(20.0),
@@ -133,19 +140,12 @@ class _DetectionScreenState extends State<DetectionScreen> {
 
                 // Area Input Gambar
                 Container(
-                  // ... (styling container input gambar tetap sama) ...
                   padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 16.0),
                   decoration: BoxDecoration(
                     color: cardColor,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: borderColor, width: 1.5),
-                     boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 8,
-                          offset: const Offset(0, 4),
-                        ),
-                      ]
+                     boxShadow: [ BoxShadow( color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 4), ),]
                   ),
                   child: Column(
                     children: [
@@ -154,53 +154,21 @@ class _DetectionScreenState extends State<DetectionScreen> {
                           padding: const EdgeInsets.only(bottom: 16.0),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(12),
-                            child: Image.file(
-                              currentImageFile,
-                              height: 200,
-                              width: double.infinity,
-                              fit: BoxFit.cover,
-                            ),
+                            child: Image.file( currentImageFile, height: 200, width: double.infinity, fit: BoxFit.cover,),
                           ),
                         )
                       else if (state is RecipeDetectionImageLoading)
-                        Container(
-                          height: 200,
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            color: Colors.grey[200],
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Center(child: CircularProgressIndicator(color: accentColor)),
-                        )
+                        Container( height: 200, width: double.infinity, decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(12),),
+                          child: Center(child: CircularProgressIndicator(color: accentColor)),)
                       else
-                        Container(
-                          height: 200,
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            color: Colors.grey[200],
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Center(
-                            child: Text(
-                              'Pratinjau gambar akan muncul di sini',
-                              style: TextStyle(color: Colors.grey[500]),
-                            ),
-                          ),
-                        ),
+                        Container( height: 200, width: double.infinity, decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(12),),
+                          child: Center( child: Text( 'Pratinjau gambar akan muncul di sini', style: TextStyle(color: Colors.grey[500]), ),),),
                       const SizedBox(height: 16),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
-                          _buildImageInputAction(
-                            icon: Icons.camera_alt_outlined,
-                            label: 'Ambil\nKamera', // Label disingkat agar muat
-                            onTap: () => _onPickImage(ImageSource.camera),
-                          ),
-                          _buildImageInputAction(
-                            icon: Icons.photo_library_outlined,
-                            label: 'Pilih dari\nGaleri', // Label disingkat
-                            onTap: () => _onPickImage(ImageSource.gallery),
-                          ),
+                          _buildImageInputAction( icon: Icons.camera_alt_outlined, label: 'Ambil\nKamera', onTap: () => _onPickImage(ImageSource.camera), isLoading: state is RecipeDetectionImageLoading,),
+                          _buildImageInputAction( icon: Icons.photo_library_outlined, label: 'Pilih dari\nGaleri', onTap: () => _onPickImage(ImageSource.gallery), isLoading: state is RecipeDetectionImageLoading,),
                         ],
                       ),
                     ],
@@ -208,23 +176,22 @@ class _DetectionScreenState extends State<DetectionScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                Text(
-                  'Atau tulis daftar bahan :',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: textColor),
-                ),
+                Text('Atau tulis daftar bahan :', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: textColor),),
                 const SizedBox(height: 12),
                 TextField(
                   controller: _ingredientController,
-                  decoration: InputDecoration(
-                    hintText: 'Contoh : Telur, Tomat, Bayam (pisahkan koma)',
-                    // ... (styling TextField tetap sama) ...
-                  ),
-                  minLines: 2, maxLines: 4,
-                  style: TextStyle(color: textColor, fontSize: 15),
+                  decoration: InputDecoration( hintText: 'Contoh : Telur, Tomat, Bayam (pisahkan koma)', hintStyle: TextStyle(color: hintTextColor), /* ... (styling lain) ... */),
+                  minLines: 2, maxLines: 4, style: TextStyle(color: textColor, fontSize: 15),
                   onTap: (){
-                    if (state is RecipeDetectionImagePicked || currentImageFile != null) {
-                      context.read<RecipeDetectionCubit>().resetDetection(); // Reset jika ada gambar terpilih
+                    if (currentImageFile != null || state is RecipeDetectionImagePicked) {
+                      context.read<RecipeDetectionCubit>().resetDetection();
+                      _ingredientController.clear(); // Bersihkan juga teks jika ada gambar
                     }
+                  },
+                  onChanged: (text) { // Jika pengguna mulai mengetik, reset state gambar
+                     if (text.isNotEmpty && (currentImageFile != null || state is RecipeDetectionImagePicked)) {
+                        context.read<RecipeDetectionCubit>().resetDetection();
+                     }
                   },
                 ),
                 const SizedBox(height: 24),
@@ -232,24 +199,20 @@ class _DetectionScreenState extends State<DetectionScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: (state is RecipeDetectionProcessing) 
-                                ? null // Nonaktifkan tombol saat sedang memproses
-                                : () => _onDetectRecipesPressed(state),
+                    onPressed: (state is RecipeDetectionProcessing || state is RecipeDetectionImageLoading) 
+                                ? null 
+                                : _onDetectRecipesPressed,
                     style: ElevatedButton.styleFrom(backgroundColor: accentColor, padding: const EdgeInsets.symmetric(vertical: 16),),
                     child: (state is RecipeDetectionProcessing)
-                        ? SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
+                        ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
                         : Text('DETEKSI RESEP', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
                   ),
                 ),
                 const SizedBox(height: 24),
 
-                // Area Hasil Deteksi / Informasi
-                Text(
-                  'Informasi & Hasil',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: textColor),
-                ),
+                Text('Informasi & Hasil', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: textColor),),
                 const SizedBox(height: 12),
-                _buildResultsArea(state), // Widget baru untuk menampilkan hasil
+                _buildResultsArea(state),
               ],
             ),
           );
@@ -258,99 +221,69 @@ class _DetectionScreenState extends State<DetectionScreen> {
     );
   }
 
-  Widget _buildImageInputAction({required IconData icon, required String label, required VoidCallback onTap}) {
-    // ... (definisi _buildImageInputAction tetap sama seperti sebelumnya) ...
+  Widget _buildImageInputAction({required IconData icon, required String label, required VoidCallback onTap, bool isLoading = false}) {
     return Expanded(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8.0),
         child: ElevatedButton.icon(
-          icon: Icon(icon, color: Colors.white, size: 20), // Ukuran ikon disesuaikan
-          label: Text(label, textAlign: TextAlign.center, style: const TextStyle(fontSize: 12, color: Colors.white, height: 1.2)), // Ukuran font & tinggi baris
-          onPressed: onTap,
+          icon: Icon(icon, color: Colors.white, size: 20),
+          label: Text(label, textAlign: TextAlign.center, style: const TextStyle(fontSize: 12, color: Colors.white, height: 1.2)),
+          onPressed: isLoading ? null : onTap, // Nonaktifkan saat loading gambar
           style: ElevatedButton.styleFrom(
             backgroundColor: iconColor,
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-            minimumSize: const Size(0, 50), // Atur tinggi minimum tombol
+            shape: RoundedRectangleBorder( borderRadius: BorderRadius.circular(10),),
+            minimumSize: const Size(0, 50),
           ),
         ),
       ),
     );
   }
 
-  // Widget baru untuk menampilkan hasil berdasarkan state Cubit
   Widget _buildResultsArea(RecipeDetectionState state) {
     String messageToShow = "Pilih gambar atau masukkan bahan untuk memulai.";
     List<Recipe> recipesToShow = [];
 
-    if (state is RecipeDetectionProcessing) {
-      messageToShow = state.message;
-    } else if (state is RecipeDetectionIngredientsDetected) {
-      messageToShow = "Bahan terdeteksi: ${state.ingredients.join(', ')}\nSedang mencari resep...";
-    } else if (state is RecipeDetectionSuccess) {
-      messageToShow = "Resep ditemukan berdasarkan bahan: ${state.detectedIngredients.join(', ')}";
+    if (state is RecipeDetectionImageLoading) messageToShow = "Memuat gambar...";
+    if (state is RecipeDetectionImagePicked) messageToShow = "Gambar dipilih. Tekan 'DETEKSI RESEP'.";
+    if (state is RecipeDetectionProcessing) messageToShow = state.message;
+    if (state is RecipeDetectionIngredientsDetected) messageToShow = "Bahan terdeteksi: ${state.ingredients.join(', ')}\nSedang mencari resep...";
+    if (state is RecipeDetectionSuccess) {
+      messageToShow = "Resep ditemukan (${state.matchedRecipes.length} resep) berdasarkan bahan: ${state.detectedIngredients.join(', ')}";
       recipesToShow = state.matchedRecipes;
-    } else if (state is RecipeDetectionNoMatch) {
-      messageToShow = "Tidak ada resep yang cocok ditemukan untuk bahan: ${state.detectedIngredients.join(', ')}";
-    } else if (state is RecipeDetectionError) {
-      messageToShow = "Error: ${state.message}";
-    } else if (state is RecipeDetectionImagePicked) {
-      messageToShow = "Gambar dipilih. Tekan 'DETEKSI RESEP' untuk memproses.";
-    } else if (state is RecipeDetectionImageLoading) {
-      messageToShow = "Memuat gambar...";
     }
-
-
+    if (state is RecipeDetectionNoMatch) messageToShow = "Tidak ada resep yang cocok ditemukan untuk bahan: ${state.detectedIngredients.join(', ')}";
+    if (state is RecipeDetectionError) messageToShow = "Error: ${state.message}";
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(16.0),
-          decoration: BoxDecoration(
-            color: textFieldFillColor,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: borderColor.withOpacity(0.7)),
-          ),
-          child: Text(
-            messageToShow,
-            style: TextStyle(fontSize: 15, color: textColor.withOpacity(0.9)),
-            textAlign: TextAlign.center,
-          ),
+          decoration: BoxDecoration( color: textFieldFillColor, borderRadius: BorderRadius.circular(12), border: Border.all(color: borderColor.withOpacity(0.7)),),
+          child: Text( messageToShow, style: TextStyle(fontSize: 15, color: textColor.withOpacity(0.9)), textAlign: TextAlign.center,),
         ),
         if (recipesToShow.isNotEmpty) ...[
           const SizedBox(height: 16),
           Text("Resep yang Cocok:", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textColor)),
           const SizedBox(height: 8),
           ListView.builder(
-            shrinkWrap: true, // Penting karena di dalam SingleChildScrollView
-            physics: const NeverScrollableScrollPhysics(), // Agar tidak ada double scroll
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
             itemCount: recipesToShow.length,
             itemBuilder: (context, index) {
               final recipe = recipesToShow[index];
-              // Gunakan kartu resep yang mirip dengan HomeScreen atau CollectionScreen
-              // atau buat kartu sederhana di sini.
               return Card(
-                margin: const EdgeInsets.only(bottom: 10),
-                color: cardColor,
-                elevation: 1,
+                margin: const EdgeInsets.only(bottom: 10), color: cardColor, elevation: 1,
                 child: ListTile(
                   leading: recipe.imageUrl.isNotEmpty
-                      ? ClipRRect(
-                          borderRadius: BorderRadius.circular(6),
-                          child: Image.network(
-                            recipe.imageUrl,
-                            width: 60,
-                            height: 60,
-                            fit: BoxFit.cover,
-                            errorBuilder: (ctx, err, st) => Container(width:60, height:60, color:Colors.grey[200], child: Icon(Icons.restaurant, color: Colors.grey[400])),
-                          ),
-                        )
+                      ? ClipRRect( borderRadius: BorderRadius.circular(6),
+                          child: Image.network( recipe.imageUrl, width: 60, height: 60, fit: BoxFit.cover,
+                            errorBuilder: (ctx, err, st) => Container(width:60, height:60, color:Colors.grey[200], child: Icon(Icons.restaurant, color: Colors.grey[400])),),)
                       : Container(width:60, height:60, color:Colors.grey[200], child: Icon(Icons.restaurant, color: Colors.grey[400])),
                   title: Text(recipe.name, style: TextStyle(fontWeight: FontWeight.w600, color: textColor)),
-                  subtitle: Text('${recipe.category} - ${recipe.cookTime} - ${recipe.difficulty}', style: TextStyle(fontSize: 12, color: textColor.withOpacity(0.7))),
+                  subtitle: Text('${recipe.category} • ${recipe.cookTime} • ${recipe.difficulty}', style: TextStyle(fontSize: 12, color: textColor.withOpacity(0.7))),
                   onTap: () {
                     Navigator.pushNamed(context, '/recipe-detail', arguments: recipe);
                   },
