@@ -8,9 +8,20 @@ import 'package:myapp/presentation/bloc/auth/auth_cubit.dart'; // <-- Impor Auth
 
 import 'package:myapp/presentation/screens/login_screen.dart';
 import 'package:myapp/presentation/screens/home_screen.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  try {
+    await dotenv.load(fileName: ".env");
+    print(
+      "DEBUG: File .env berhasil dimuat.",
+    ); // Tambahkan print untuk konfirmasi
+  } catch (e) {
+    print(
+      "DEBUG: GAGAL memuat file .env: $e",
+    ); // Ini akan memberi tahu jika load gagal
+  }
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await di.initDI();
   runApp(const MyApp());
@@ -28,10 +39,8 @@ class MyApp extends StatelessWidget {
     final Color accentColor = const Color(0xFFFF7043);
 
     return BlocProvider<AuthCubit>(
-      // <-- Sediakan AuthCubit di sini
-      create:
-          (context) =>
-              di.sl<AuthCubit>(), // Mengambil instance AuthCubit dari GetIt
+      // AuthCubit disediakan di sini
+      create: (context) => di.sl<AuthCubit>(),
       child: MaterialApp(
         title: 'Snap Cook',
         theme: ThemeData(
@@ -100,7 +109,8 @@ class MyApp extends StatelessWidget {
         // Kita akan mengatur initialRoute berdasarkan state AuthCubit
         // Untuk sementara, biarkan seperti ini atau arahkan ke halaman "splash"
         // initialRoute: '/login', // Akan kita ubah
-        home: AuthStateHandler(), // Widget baru untuk menangani state auth awal
+        home:
+            const AuthStateHandler(), // Widget baru untuk menangani state auth awal
       ),
     );
   }

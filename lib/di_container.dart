@@ -11,6 +11,11 @@ import 'package:myapp/domain/usecases/get_all_recipes_usecase.dart';
 import 'package:myapp/domain/usecases/get_recipe_by_id_usecase.dart';
 import 'package:myapp/presentation/bloc/auth/auth_cubit.dart';
 import 'package:myapp/presentation/bloc/recipe_home/recipe_home_cubit.dart';
+import 'package:myapp/domain/repositories/ingredient_detection_repository.dart';
+import 'package:myapp/data/repositories/ingredient_detection_repository_impl.dart';
+import 'package:myapp/data/datasources/ingredient_detection_remote_datasource.dart';
+import 'package:myapp/domain/usecases/detect_ingredients_usecase.dart';
+import 'package:myapp/presentation/bloc/recipe_detection/recipe_detection_cubit.dart';
 
 // Membuat instance global dari GetIt (Service Locator)
 final sl = GetIt.instance; // sl adalah singkatan dari Service Locator
@@ -29,6 +34,13 @@ Future<void> initDI() async {
     () => AuthCubit(sl()),
   ); // sl() akan otomatis me-resolve AuthService
   sl.registerFactory(() => RecipeHomeCubit(getAllRecipesUseCase: sl()));
+  sl.registerFactory(
+    () => RecipeDetectionCubit(
+      // <-- DAFTARKAN RECIPE DETECTION CUBIT
+      detectIngredientsUseCase: sl(),
+      recipeRepository: sl(),
+    ),
+  );
 
   // Services
   sl.registerLazySingleton(
@@ -38,6 +50,7 @@ Future<void> initDI() async {
   // Use Cases
   sl.registerLazySingleton(() => GetAllRecipesUseCase(sl()));
   sl.registerLazySingleton(() => GetRecipeByIdUseCase(sl()));
+  sl.registerLazySingleton(() => DetectIngredientsUseCase(sl()));
 
   // Repositories
   // Kita mendaftarkan implementasi (RecipeRepositoryImpl) untuk interface (RecipeRepository).
@@ -45,11 +58,21 @@ Future<void> initDI() async {
     () => RecipeRepositoryImpl(remoteDatasource: sl()),
     // () => RecipeRepositoryImpl(localDatasource: sl()),
   );
+  sl.registerLazySingleton<IngredientDetectionRepository>(
+    // <-- PASTIKAN INI ADA DAN BENAR
+    () => IngredientDetectionRepositoryImpl(
+      remoteDatasource: sl(),
+    ), // sl() akan me-resolve IngredientDetectionRemoteDatasource
+  );
 
   // Data Sources
   sl.registerLazySingleton<RecipeRemoteDatasource>(
     // <-- DAFTARKAN REMOTE DATASOURCE
     () => RecipeRemoteDatasourceImpl(firestore: sl()),
+  );
+  sl.registerLazySingleton<IngredientDetectionRemoteDatasource>(
+    // Pastikan ini sudah terdaftar sebelumnya
+    () => IngredientDetectionRemoteDatasourceImpl(),
   );
   // sl.registerLazySingleton<RecipeLocalDatasource>(
   //   () => RecipeLocalDatasourceImpl(),
@@ -64,7 +87,7 @@ Future<void> initDI() async {
     () => FirebaseFirestore.instance,
   ); // <-- DAFTARKAN INSTANCE FIRESTORE
 
-  print(
-    "Dependency Injection Initialized with RecipeHomeCubit, AuthCubit, and Auth Service",
-  );
+  // print("Dependency Injection Initialized with IngredientDetectionRepository");
+  // print("Dependency Injection Initialized with DetectIngredientsUseCase");
+  print("Dependency Injection Initialized with RecipeDetectionCubit");
 }

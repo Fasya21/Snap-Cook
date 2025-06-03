@@ -16,11 +16,10 @@ dependencies:
   equatable: ^2.0.5
   firebase_core: ^3.1.1 # Cek versi terbaru di pub.dev
   cloud_firestore: ^5.0.2
-
-  # Pastikan baris ini ada dan tidak ada tanda '#' di depannya
   image_picker: ^1.1.2 # Anda bisa mengecek versi terbaru di pub.dev
-
+  flutter_dotenv: ^5.1.0 # Cek versi terbaru
   firebase_auth: ^5.1.1
+  google_generative_ai: ^0.4.7
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -42,6 +41,7 @@ flutter:
   assets:
     - assets/recipes.json       # Pastikan path ini benar
     - assets/snapcook_logo.png  # Pastikan path ini benar
+    - .env  
   #  - assets/images/          # Jika Anda memiliki folder images, Anda bisa mendaftarkan seluruh folder
   #  - assets/fonts/           # Contoh jika Anda punya folder font
 

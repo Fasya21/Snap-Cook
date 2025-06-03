@@ -5,6 +5,7 @@ import 'package:myapp/presentation/bloc/recipe_home/recipe_home_cubit.dart'; // 
 import 'package:myapp/presentation/screens/detection_screen.dart';
 import 'package:myapp/presentation/screens/collection_screen.dart';
 import 'package:myapp/presentation/screens/profile_screen.dart';
+import 'package:myapp/presentation/bloc/recipe_detection/recipe_detection_cubit.dart';
 import 'package:myapp/di_container.dart' as di; // Impor GetIt instance
 
 class HomeScreen extends StatefulWidget {
@@ -41,7 +42,13 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     } else if (_selectedIndex == 1) {
       // Deteksi
-      return const DetectionScreen();
+      // return const DetectionScreen();
+      return BlocProvider<RecipeDetectionCubit>(
+        // <-- SEDIAKAN RecipeDetectionCubit DI SINI
+        create: (context) => di.sl<RecipeDetectionCubit>(), // Ambil dari GetIt
+        child:
+            const DetectionScreen(), // DetectionScreen sekarang akan punya akses ke Cubit
+      );
     } else if (_selectedIndex == 2) {
       // Koleksi
       // Nantinya CollectionScreen juga akan butuh Cubit sendiri
